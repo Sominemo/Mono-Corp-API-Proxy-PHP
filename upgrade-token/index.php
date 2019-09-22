@@ -3,7 +3,7 @@ ob_end_clean();
 header("Connection: close");
 ignore_user_abort(true);
 ob_start();
-require __DIR__."../.private/scripts/index.php";
+require __DIR__."/../.private/scripts/index.php";
 list($proof, $roll_in_token) = explode("/", $_GET["token"]);
 $request_id = getallheaders()["x-request-id"];
 if (!is_string($request_id) || !(strlen($request_id) > 0)) die(json(["error" => "Incorrect request ID"]));

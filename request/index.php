@@ -1,5 +1,5 @@
 <?php
-require __DIR__."../.private/scripts/index.php";
+require __DIR__."/../.private/scripts/index.php";
 
 $header_ignore = Settings::$get->headers_blacklist;
 $get_ignore = ["__method__"];
