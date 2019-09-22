@@ -3,5 +3,10 @@ Example implementation of [Mono Corp API Proxy Protocol](https://gist.github.com
 
 ## Install
 1. Open public folder of your PHP server
-2. `git clone https://github.com/Sominemo/Mono-Corp-API-Proxy-PHP.git .`
+2. 
+```shell
+git clone https://github.com/Sominemo/Mono-Corp-API-Proxy-PHP.git .
+rm -rf .git
+rm gitignore
+```
 3. Run `example.com/install` from browser
