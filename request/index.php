@@ -17,6 +17,8 @@ foreach ($get_ignore as $value) {
     if (isset($get[$value])) unset($get[$value]);
 }
 
+$headers["x-request-id"] = $headers["x-request-id"] ?: $headers["X-Request-Id"];
+
 if (isset($headers["x-request-id"])) {
     $db = DB::get();
     $st = $db->prepare("SELECT * from `tokens` WHERE `token` = ?");

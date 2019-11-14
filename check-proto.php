@@ -4,7 +4,7 @@ require __DIR__ . "/.private/scripts/index.php";
 die(json([
     "proto" => [
         "version" => 1,
-        "patch" => 0,
+        "patch" => 1,
     ],
     "implementation" => [
         "name" => "PHP Mono Corp API Proxy",
