@@ -1,0 +1,14 @@
+@media(max-width: 1025px) and (min-height: 450px) {
+    .promoblock:not(.shift):not(.endshift) {
+        font-size: 1em;
+    }
+    .twoparts {
+        flex-direction: column;
+    }
+    .promoblock.shift {
+        margin: 0;
+    }
+    .hint.shift {
+        bottom: 35vmin;
+    }
+}
