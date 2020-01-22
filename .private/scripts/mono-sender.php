@@ -33,6 +33,8 @@ function mono_sender($method, $requestMethod = "GET", $token = null, $data = [],
         print_r($options);
         print_r($http_response_header);
         print_r($response);
+        print_r($method);
+        print_r($method.($token ? $token : $t).$time);
     }
     return $response;
 }
