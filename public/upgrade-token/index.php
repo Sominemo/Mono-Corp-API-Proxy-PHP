@@ -3,7 +3,7 @@ ob_end_clean();
 header("Connection: close");
 ignore_user_abort(true);
 ob_start();
-require __DIR__."/../.private/scripts/index.php";
+require __DIR__ . "/../.private/scripts/index.php";
 list($proof, $roll_in_token) = explode("/", $_GET["token"]);
 $request_id = getallheaders()["x-request-id"];
 if (!is_string($request_id) || !(strlen($request_id) > 0)) die(json(["error" => "Incorrect request ID"]));
@@ -28,15 +28,22 @@ while (!$isUnique) {
 
 Token::$is = $token;
 
+$client_data = json_decode(mono_sender("/personal/client-info", "GET", $request_id));
+
 $values = [
     "token" => $token,
     "mono" => $request_id,
     "roll" => $roll_in_token,
+    "mono_id" => $client_data->clientId,
 ];
 $str_values = DB::values($values);
 $st = $db->prepare("INSERT into `tokens` SET $str_values");
 $success = $st->execute($values);
 if (!$success) die(json(["error" => "Failed to apply auth data"]));
+
+$st = $db->prepare("UPDATE `tokens` SET `mono` = :token WHERE `mono_id` = :mono_id");
+$success = $st->execute(["token" => $request_id, "mono_id" => $client_data->clientId]);
+if (!$success) die(json(["error" => "Failed to update other devices"]));
 
 $st = $db->prepare("DELETE from `roll-in` WHERE `token` = :token");
 $success = $st->execute(["token" => $roll_in_token]);
@@ -46,7 +53,7 @@ echo json(["ok" => true]);
 $size = ob_get_length();
 header("Content-Length: $size");
 ob_end_flush();
-flush(); 
+flush();
 
 $cl = $db->prepare("DELETE FROM `roll-in` WHERE `time` < NOW() - INTERVAL 15 minute");
 $cl->execute();

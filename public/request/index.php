@@ -33,7 +33,7 @@ if (isset($headers["x-request-id"])) {
     $headers["X-Sign"] = mono_sign($method, $r["mono"], $timer);
     $headers["X-Key-Id"] = KEY_ID;
     $headers["X-Time"] = strval($timer);
-    mono_sender($method, "GET", $r["mono"]);
+    // mono_sender($method, "GET", $r["mono"]);
 }
 
 $headers_compiled = [];
@@ -53,6 +53,17 @@ $context = stream_context_create([
 ]);
 
 $request = file_get_contents("$mono_api_domain$method".(count($get) > 0 ? "?" : "").http_build_query($get), false, $context);
+
+function getHttpCode($http_response_header)
+{
+    if(is_array($http_response_header))
+    {
+        $parts=explode(' ',$http_response_header[0]);
+        if(count($parts)>1)
+            return intval($parts[1]);
+    }
+    return 0;
+}
 
 foreach ($http_response_header as $value) {
     header("$value");

@@ -17,7 +17,8 @@ function json($data)
             $dat = $j . PHP_EOL;
             $fp = fopen(dirname(__FILE__) . "/../meta/log.txt", 'a');
             fwrite($fp, $dat);
-        } catch (Error $e) { }
+        } catch (Error $e) {
+        }
     }
     return $j;
 }
@@ -113,9 +114,12 @@ class DBData
     $header_bl = array_filter(explode("|", $_POST["headerbl"]));
     if (count($header_bl) === 0) $header_bl = ["SSL", "GeoIp-Country-Code", "Host"];
 
+    $public_push_cert = (empty($_POST["publicpushcert"]) ? false : $_POST["publicpushcert"]);
+    $private_push_cert = (empty($_POST["privatepushcert"]) ? false : $_POST["privatepushcert"]);
+
     file_put_contents(
         __DIR__ . "/.private/meta/settings.json",
-        json(["path" => $path, "api_domain" => $api_domain, "headers_blacklist" => $header_bl])
+        json(["path" => $path, "api_domain" => $api_domain, "headers_blacklist" => $header_bl, "push" => ["public" => $public_push_cert, "private" => $private_push_cert]])
     );
     exit('
 <!DOCTYPE html>
@@ -168,6 +172,15 @@ class DBData
             <legend>Monobank API</legend>
             <input type="url" name="apidomain" placeholder="https://api.monobank.ua"><br>
             Blacklisted headers: <br><input type="text" name="headerbl" size="70" placeholder="SSL|GeoIp-Country-Code|Host">
+        </fieldset>
+        <fieldset>
+            <legend>Push API</legend>
+            <pre>
+    $ npm install -g web-push
+    $ web-push generate-vapid-keys
+            </pre>
+            <input type="text" name="publicpushcert" placeholder="Public Push Cert" size="90"><br>
+            <input type="text" name="privatepushcert" placeholder="Private Push Cert" size="90"><br>
         </fieldset>
         <fieldset>
             <legend>Write & Set Up</legend>
