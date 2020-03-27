@@ -18,7 +18,7 @@ while (!$isUnique) {
 Token::$is = $token;
 $proof = bin2hex(random_bytes(4));
 
-$auth = mono_sender("/personal/auth/request", "POST", null, [], ["X-Callback: " . Settings::$get->path . "/upgrade-token/" . $proof . "/" . $token, "X-Permissions: sp",]);
+$auth = mono_sender("/personal/auth/request", "POST", null, "", ["X-Callback: " . Settings::$get->path . "/upgrade-token/" . $proof . "/" . $token, "X-Permissions: sp",]);
 $authParse = json_decode($auth, true);
 if (json_last_error() !== JSON_ERROR_NONE || isset($authParse["errorDescription"])) die(json(["error" => "Failed to request auth from Monobank"]));
 

@@ -42,7 +42,7 @@ class DB extends DBData
 
             self::$connection = $pdo;
         } catch (PDOException $e) {
-            die(json(["error" => "Failed to contact DB"]));
+            exit(json(["error" => "Failed to contact DB"]));
         }
     }
 

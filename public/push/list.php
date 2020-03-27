@@ -1,4 +1,5 @@
 <?php
+$__push_mode = true;
 require __DIR__ . "/../.private/scripts/index.php";
 
 checkToken(true);
@@ -38,6 +39,16 @@ foreach ($client_data->accounts as $account) {
         ],
     ];
 }
+
+function cmp($a, $b)
+{
+    if ($a["id"] == $b["id"]) {
+        return 0;
+    }
+    return ($a["id"] < $b["id"]) ? -1 : 1;
+}
+
+usort($statement_channels, "cmp");
 
 $channels_prepare = array_merge($additional_channels, $statement_channels);
 $channels = [];

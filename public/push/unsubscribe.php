@@ -1,4 +1,5 @@
 <?php
+$__push_mode = true;
 require __DIR__ . "/../.private/scripts/index.php";
 
 Token::$is = checkToken(true);
