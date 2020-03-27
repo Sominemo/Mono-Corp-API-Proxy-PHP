@@ -8,7 +8,7 @@ Example implementation of [Mono Corp API Proxy Protocol](https://gist.github.com
 
 ## Install
 ### All-ready
-Download archive from GihTub Releases and unpack it in a parent folder of your public_html (or something like that)
+Download archive from [GiTHub Releases and unpack](https://github.com/Sominemo/Mono-Corp-API-Proxy-PHP/releases) it in a parent folder of your public_html (or something called like that)
 
 ### Manual
 1. Open folder, that contains the public folder of your PHP server
