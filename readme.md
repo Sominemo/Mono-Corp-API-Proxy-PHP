@@ -7,6 +7,10 @@ Example implementation of [Mono Corp API Proxy Protocol](https://gist.github.com
 - OpenSSL extension enabled
 
 ## Install
+### All-ready
+Download archive from GihTub Releases and unpack it in a parent folder of your public_html (or something like that)
+
+### Manual
 1. Open folder, that contains the public folder of your PHP server
 ```shell
 git clone https://github.com/Sominemo/Mono-Corp-API-Proxy-PHP.git .
