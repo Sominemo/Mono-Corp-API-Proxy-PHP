@@ -15,8 +15,15 @@ $id = $_GET["id"];
 $type = $_GET["type"];
 
 $db = DB::get();
-$req = $db->prepare("SELECT * FROM subscriptions WHERE subscriptions.type = ? AND subscriptions.identificator = ?");
-$req->execute([$type, $id]);
+
+if (!$_GET["all"]) {
+    $req = $db->prepare("SELECT * FROM subscriptions WHERE subscriptions.type = ? AND subscriptions.identificator = ?");
+    $req->execute([$type, $id]);
+} else {
+    $req = $db->prepare("SELECT * FROM subscriptions GROUP BY `token`, `endpoint`, `key`, `auth`");
+    $req->execute();
+}
+
 while ($f_row = $req->fetch()) {
     Token::$is = $f_row["token"];
     Push::reply(
