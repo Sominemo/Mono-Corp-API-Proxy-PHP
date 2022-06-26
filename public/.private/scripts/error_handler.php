@@ -23,7 +23,17 @@ function _logError($data = [])
 
     if (debug) $r["debug"] = $data;
 
-    echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $m = json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if (debug) {
+        try {
+            $dat = $m.PHP_EOL;
+            $fp = fopen(dirname(__FILE__)."/../meta/log.txt", 'a');
+            fwrite($fp, $dat);
+        } catch (Error $e) {
+            
+        }
+    }
+    echo $m;
     die();
 }
 

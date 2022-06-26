@@ -1,12 +1,26 @@
-<?
+<?php
 ob_end_clean();
 header("Connection: close");
 ignore_user_abort(true);
 ob_start();
 require __DIR__ . "/../.private/scripts/index.php";
 list($proof, $roll_in_token) = explode("/", $_GET["token"]);
-$request_id = getallheaders()["x-request-id"];
+$all_headers = getallheaders();
+$request_id = $all_headers["x-request-id"] ?? $all_headers["X-Request-Id"];
+
+
+if (debug) {
+        try {
+            $dat = "TOKEN UPGRADE ".$proof." ".$roll_in_token." ".$request_id."\n\nHEADERS: ".print_r($all_headers, true).PHP_EOL;
+            $fp = fopen(dirname(__FILE__)."/../.private/meta/log.txt", 'a');
+            fwrite($fp, $dat);
+        } catch (Error $e) {
+            
+        }
+    }
+
 if (!is_string($request_id) || !(strlen($request_id) > 0)) die(json(["error" => "Incorrect request ID"]));
+
 
 $db = DB::get();
 

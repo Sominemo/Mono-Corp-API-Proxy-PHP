@@ -34,7 +34,7 @@ class Push
     static function reply($subscription, $payload, $flush, $options, $push_id)
     {
 
-        self::$API->sendNotification($subscription, $payload, false, $options);
+        self::$API->queueNotification($subscription, $payload, $options);
 
         try {
             foreach (self::$API->flush() as $report) {

@@ -1,8 +1,6 @@
 <?php
-// file_put_contents("log.txt", "\nSTART", FILE_APPEND);
 $raw = file_get_contents('php://input');
 $input = json_decode($raw);
-// file_put_contents("log.txt", "\n$raw", FILE_APPEND);
 
 $__force_debug = true;
 require __DIR__ . "/../.private/scripts/index.php";

@@ -54,6 +54,13 @@ class DBData
     $db = DB::get();
 
     $db->exec("
+CREATE TABLE IF NOT EXISTS `clients_count` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `time` int(11) NOT NULL,
+  `value` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `roll-in` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `token` char(45) COLLATE utf8_unicode_ci NOT NULL,
@@ -63,22 +70,22 @@ CREATE TABLE IF NOT EXISTS `roll-in` (
   `mono` tinytext COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `token` (`token`)
-) ENGINE=MyISAM AUTO_INCREMENT=853 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `subscriptions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `type` char(255) COLLATE utf8_unicode_ci NOT NULL,
-  `identificator` char(255) COLLATE utf8_unicode_ci NOT NULL,
-  `token` char(255) COLLATE utf8_unicode_ci NOT NULL,
+  `type` char(255) COLLATE cp1251_ukrainian_ci NOT NULL,
+  `identificator` char(255) COLLATE cp1251_ukrainian_ci NOT NULL,
+  `token` char(255) COLLATE cp1251_ukrainian_ci NOT NULL,
   `date` int(11) NOT NULL DEFAULT '0',
   `state` int(11) NOT NULL DEFAULT '1',
-  `endpoint` text COLLATE utf8_unicode_ci NOT NULL,
-  `key` text COLLATE utf8_unicode_ci NOT NULL,
-  `auth` text COLLATE utf8_unicode_ci NOT NULL,
-  `encoding` text COLLATE utf8_unicode_ci NOT NULL,
+  `endpoint` text COLLATE cp1251_ukrainian_ci NOT NULL,
+  `key` text COLLATE cp1251_ukrainian_ci NOT NULL,
+  `auth` text COLLATE cp1251_ukrainian_ci NOT NULL,
+  `encoding` text COLLATE cp1251_ukrainian_ci NOT NULL,
   `expires` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=241 DEFAULT CHARSET=cp1251 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=cp1251 COLLATE=cp1251_ukrainian_ci;
 
 CREATE TABLE IF NOT EXISTS `tokens` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -89,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `tokens` (
   `mono_id` text COLLATE utf8_unicode_ci,
   PRIMARY KEY (`id`),
   UNIQUE KEY `token` (`token`)
-) ENGINE=MyISAM AUTO_INCREMENT=491 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
     ");
 
     file_put_contents(__DIR__ . "/.private/meta/priv.key", $_POST["privatekey"]);
@@ -313,39 +320,39 @@ CREATE TABLE IF NOT EXISTS `tokens` (
                     <input type="checkbox" name="nopushserver" id="nopushserver" value="1">
                     Disable Push Server and skip this block
                 </label>
-                <details>
-                    <summary><b>Composer will be used to install Web Push libraries. Click to change that.</b></summary>
-                    <label for="composerdeps" class="has-checkbox">
-                        <input type="checkbox" name="composerdeps" id="composerdeps" value="1" checked>
-                        Install Web Push libraries via Composer automatically
-                    </label><br>
-                    <label for="webhook" class="has-checkbox">
-                        <input type="checkbox" name="webhook" id="webhook" value="1" checked>
-                        Set webhook in Monobank API
-                    </label><br>
-                    <label for="dlcomposer" class="has-checkbox">
-                        <input type="checkbox" name="dlcomposer" id="dlcomposer" value="1" checked>
-                        Download Composer on the fly
-                    </label><br>
-                    <label for="phpexecutable">
-                        PHP Executable Path:
-                    </label>
-                    <input type="text" name="phpexecutable" id="phpexecutable" placeholder="php">
-                    <p>If you unchecked the first option, but still want Push Server to work, before proceeding use following command:</p>
-                    <pre>
+            <details>
+                <summary><b>Composer will be used to install Web Push libraries. Click to change that.</b></summary>
+                <label for="composerdeps" class="has-checkbox">
+                    <input type="checkbox" name="composerdeps" id="composerdeps" value="1" checked>
+                    Install Web Push libraries via Composer automatically
+                </label><br>
+                <label for="webhook" class="has-checkbox">
+                    <input type="checkbox" name="webhook" id="webhook" value="1" checked>
+                    Set webhook in Monobank API
+                </label><br>
+                <label for="dlcomposer" class="has-checkbox">
+                    <input type="checkbox" name="dlcomposer" id="dlcomposer" value="1" checked>
+                    Download Composer on the fly
+                </label><br>
+                <label for="phpexecutable">
+                    PHP Executable Path:
+                </label>
+                <input type="text" name="phpexecutable" id="phpexecutable" placeholder="php">
+                <p>If you unchecked the first option, but still want Push Server to work, before proceeding use following command:</p>
+                <pre>
     $ composer install
 </pre>
-                    <p>to initiate the project from composer.lock, or install packages manually:</p>
-                    <pre>
-    $ composer require minishlink/web-push 5.2.4
+                <p>to initiate the project from composer.lock, or install packages manually:</p>
+                <pre>
+    $ composer require minishlink/web-push 7.0.0
 </pre>
-                    <p>
-                        If you can't use Composer,
-                        download the package from <a href="https://github.com/Sominemo/Mono-Corp-API-Proxy-PHP/releases" target="_blank">GitHub Releases</a>
-                        or <a href="https://php-download.com/" target="_blank">PHP Download</a>
-                        and unpack it to the parent directory of <b>public</b>, so <b>public</b> and <b>vendor</b> folders will be near.
-                    </p>
-                </details>
+                <p>
+                    If you can't use Composer,
+                    download the package from <a href="https://github.com/Sominemo/Mono-Corp-API-Proxy-PHP/releases" target="_blank">GitHub Releases</a>
+                    or <a href="https://php-download.com/" target="_blank">PHP Download</a>
+                    and unpack it to the parent directory of <b>public</b>, so <b>public</b> and <b>vendor</b> folders will be near.
+                </p>
+            </details>
             </p>
             Your Push API keys will be generated automatically
             <details>
