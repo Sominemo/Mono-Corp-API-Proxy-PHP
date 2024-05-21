@@ -34,10 +34,9 @@ $success = $st->execute($values);
 if (!$success) die(json(["error" => "Failed to apply auth data"]));
 
 $qr = file_get_contents(
-    "https://chart.googleapis.com/chart?" . http_build_query([
-        "cht" => "qr",
-        "chs" => "250",
-        "chl" => $authParse["acceptUrl"]
+    "https://api.qrserver.com/v1/create-qr-code?" . http_build_query([
+        "size" => "250x250",
+        "data" => $authParse["acceptUrl"]
     ])
 );
 
