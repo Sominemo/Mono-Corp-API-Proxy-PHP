@@ -33,20 +33,20 @@ $st = $db->prepare("INSERT into `roll-in` SET $str_values");
 $success = $st->execute($values);
 if (!$success) die(json(["error" => "Failed to apply auth data"]));
 
-$qr = file_get_contents(
+/*$qr = file_get_contents(
     "https://chart.googleapis.com/chart?" . http_build_query([
         "cht" => "qr",
         "chs" => "250",
         "chl" => $authParse["acceptUrl"]
     ])
-);
+);*/
 
 
 echo json([
     "token" => $token,
     "requestId" => $authParse["tokenRequestId"],
     "url" => $authParse["acceptUrl"],
-    "qr" => base64_encode($qr)
+    /*"qr" => base64_encode($qr)*/
 ]);
 
 $size = ob_get_length();
