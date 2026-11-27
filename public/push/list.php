@@ -3,7 +3,7 @@ $__push_mode = true;
 require __DIR__ . "/../.private/scripts/index.php";
 
 checkToken(true);
-$endpoint = $_POST["endpoint"];
+$endpoint = $_POST["endpoint"] ?? "";
 
 $client_data = json_decode(mono_sender("/personal/client-info", "GET", Token::$request));
 
@@ -58,7 +58,7 @@ foreach ($channels_prepare as $channel) {
     $st = $db->prepare("SELECT * from `subscriptions` WHERE `type` = ? AND `identificator` = ? AND `token` = ? AND `endpoint` = ?");
     $st->execute([$channel["type"], $channel["id"], Token::$is, $endpoint]);
     $r = $st->fetch();
-    $channel["state"] = ($r["state"] === 1 && ($r["expires"] > time() || $r["expires"] === 0) ? true : false);
+    $channel["state"] = ($r && $r["state"] === 1 && ($r["expires"] > time() || $r["expires"] === 0));
     $channels[] = $channel;
 }
 

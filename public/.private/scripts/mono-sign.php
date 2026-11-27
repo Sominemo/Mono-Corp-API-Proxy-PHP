@@ -5,7 +5,6 @@ function mono_sign($url, $t, $time) {
     if (!$key) die(json(["error" => "Signing error"]));
     $str = $time.$t.$url;
     openssl_sign($str, $sig, $key, OPENSSL_ALGO_SHA256);
-    openssl_free_key($key);
     return base64_encode($sig);
 }
 

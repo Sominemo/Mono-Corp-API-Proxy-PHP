@@ -1,5 +1,5 @@
 <?php
-define('debug', $__force_debug ?: false);
+define('debug', !empty($__force_debug));
 require "error_handler.php";
 
 try {
@@ -33,4 +33,4 @@ require_once "db.php";
 require_once "token.php";
 require_once "mono-sender.php";
 
-if ($__push_mode && !$__push_loaded) die(json(["error" => "Pushes are not supported on this server"]));
+if (!empty($__push_mode) && !$__push_loaded) die(json(["error" => "Pushes are not supported on this server"]));

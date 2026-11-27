@@ -7,7 +7,7 @@ function success($token)
     die(json(["token" => $token]));
 }
 
-$roll = (isset($_GET["token"]) ? $_GET["token"] : $_POST["token"]);
+$roll = $_GET["token"] ?? $_POST["token"] ?? null;
 $db = DB::get();
 
 $st = $db->prepare("SELECT COUNT(*) from `roll-in` WHERE `token` = :token AND `time` > NOW() - INTERVAL 15 minute");
@@ -22,7 +22,7 @@ if (!($cnt > 0)) {
     ]);
     $cnt = $st->fetch();
 
-    if ($cnt["id"] > 0) {
+    if ($cnt && $cnt["id"] > 0) {
         $st = $db->prepare("UPDATE `tokens` SET `roll` = NULL WHERE `id` = ?");
         $st->execute([$cnt["id"]]);
 
@@ -48,7 +48,7 @@ while (left() > 1) {
     ]);
     $cnt = $st->fetch();
 
-    if ($cnt["id"] > 0) {
+    if ($cnt && $cnt["id"] > 0) {
         $st = $db->prepare("UPDATE `tokens` SET `roll` = NULL WHERE `id` = ?");
         $st->execute([$cnt["id"]]);
 

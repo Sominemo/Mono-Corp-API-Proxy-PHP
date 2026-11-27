@@ -4,9 +4,9 @@ header("Connection: close");
 ignore_user_abort(true);
 ob_start();
 require __DIR__ . "/../.private/scripts/index.php";
-list($proof, $roll_in_token) = explode("/", $_GET["token"]);
+list($proof, $roll_in_token) = array_pad(explode("/", $_GET["token"] ?? "", 2), 2, "");
 $all_headers = getallheaders();
-$request_id = $all_headers["x-request-id"] ?? $all_headers["X-Request-Id"];
+$request_id = $all_headers["x-request-id"] ?? $all_headers["X-Request-Id"] ?? null;
 
 
 if (debug) {
@@ -33,16 +33,27 @@ $st->execute([
 $id = $st->fetchColumn();
 if (!$id > 0) die(json(["error" => "Incorrect proof or roll token"]));
 
+$isUnique = false;
 while (!$isUnique) {
     $token = bin2hex(random_bytes(20));
-    $st = $db->prepare("SELECT COUNT(*) from `roll-in` WHERE `token` = ?");
+    $st = $db->prepare("SELECT COUNT(*) from `tokens` WHERE `token` = ?");
     $st->execute([$token]);
     if ($st->fetchColumn() == 0) $isUnique = true;
 }
 
 Token::$is = $token;
 
-$client_data = json_decode(mono_sender("/personal/client-info", "GET", $request_id));
+$client_raw = mono_sender("/personal/client-info", "GET", $request_id);
+$client_data = is_string($client_raw) ? json_decode($client_raw) : null;
+if (
+    json_last_error() !== JSON_ERROR_NONE
+    || !is_object($client_data)
+    || !isset($client_data->clientId)
+    || !is_string($client_data->clientId)
+    || strlen($client_data->clientId) === 0
+) {
+    die(json(["error" => "Failed to fetch client info from Monobank"]));
+}
 
 $values = [
     "token" => $token,

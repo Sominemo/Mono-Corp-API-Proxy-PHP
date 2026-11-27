@@ -2,16 +2,16 @@
 $raw = file_get_contents('php://input');
 $input = json_decode($raw);
 
-$__force_debug = true;
+
 require __DIR__ . "/../.private/scripts/index.php";
 
-if ($_GET["token"] !== Settings::$get->push->proof) {
+if (($_GET["token"] ?? null) !== Settings::$get->push->proof) {
     http_response_code(403);
     exit(json(["error" => "Incorrect server proof"]));
 }
 
 
-if ($input->type === "StatementItem") {
+if (is_object($input) && ($input->type ?? null) === "StatementItem") {
     $db = DB::get();
     $req = $db->prepare("SELECT subscriptions.*, tokens.mono FROM subscriptions, tokens WHERE subscriptions.type = ? AND subscriptions.identificator = ? AND subscriptions.token = tokens.token");
     $req->execute(["statement", $input->data->account]);

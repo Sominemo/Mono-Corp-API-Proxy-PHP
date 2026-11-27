@@ -12,10 +12,10 @@ function checkToken($use_get = false)
     if (!$use_get) {
         $headers = getallheaders();
 
-        $headers["x-request-id"] = $headers["x-request-id"] ?: $headers["X-Request-Id"];
+        $headers["x-request-id"] = $headers["x-request-id"] ?? $headers["X-Request-Id"] ?? null;
         if (isset($headers["x-request-id"])) $token = $headers["x-request-id"];
     } else {
-        $token = $_GET["token"] ?: null;
+        $token = $_GET["token"] ?? null;
     }
 
     if ($token !== null) {
@@ -24,7 +24,7 @@ function checkToken($use_get = false)
         $st->execute([$token]);
         $r = $st->fetch();
 
-        if (($r["id"] > 0)) {
+        if ($r && ($r["id"] > 0)) {
             Token::$is = $token;
             Token::$request = $r["mono"];
 

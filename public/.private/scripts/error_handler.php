@@ -47,7 +47,7 @@ function _logError($data = [])
 function _fatalErrorShutdownHandler()
 {
     $r = error_get_last();
-    if ($r['type'] === E_ERROR) {
+    if ($r !== null && $r['type'] === E_ERROR) {
         _handleError($r['type'], $r['message'], $r['file'], $r['line']);
     }
 }

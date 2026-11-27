@@ -40,7 +40,7 @@ function mono_sender($method, $requestMethod = "GET", $token = null, $data = "{}
     $log[] = ("HTTP: " . print_r($options, true) . "\n");
     $log[] = print_r("SIGN FORMULA: " . $method . ($token ? $token : $t) . $time . "\n", true);
     $log[] = "\n------ RESPONSE -------\n";
-    $log[] = "HEADERS: " . print_r($http_response_header, true) . "\n";
+    $log[] = "HEADERS: " . print_r(http_get_last_response_headers(), true) . "\n";
     $log[] = print_r("BODY: \n" . $response . "\n", true);
     $log[] = "#### END API CALL ####\n";
 

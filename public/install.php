@@ -1,14 +1,15 @@
 <?php
-function pl($v, $a)
-{
-    foreach ($a as $value) {
-        if (!isset($v[$value])) return false;
-    }
 
-    return true;
+if (!defined('debug')) {
+    define('debug', false);
 }
 
-require_once "./.private/scripts/json.php";
+function pl(array $v, array $a): bool
+{
+    return array_all($a, static fn(string $key): bool => isset($v[$key]) && is_string($v[$key]));
+}
+
+require_once __DIR__ . "/.private/scripts/json.php";
 
 if (pl($_POST, [
     "db", "dbuser", "dbdomain", "dbpass",
@@ -17,40 +18,43 @@ if (pl($_POST, [
 
     class DeleteOnExit
     {
-        static $done = false;
+        public static bool $done = false;
 
-        function __destruct()
+        public function __destruct()
         {
-            if (self::$done) unlink(__FILE__);
+            if (self::$done && is_file(__FILE__)) {
+                unlink(__FILE__);
+            }
         }
     }
 
     $g_delete_on_exit = new DeleteOnExit();
 
-    $db = json($_POST["db"]);
-    $dbuser = json($_POST["dbuser"]);
-    $dbdomain = json($_POST["dbdomain"]);
-    $dbpass = json($_POST["dbpass"]);
+    $db_name = var_export($_POST["db"], true);
+    $db_user = var_export($_POST["dbuser"], true);
+    $db_domain = var_export($_POST["dbdomain"], true);
+    $db_pass = var_export($_POST["dbpass"], true);
 
-    if (!is_dir(__DIR__ . "/.private/meta/")) {
-        mkdir(__DIR__ . "/.private/meta/");
+    $meta_dir = __DIR__ . "/.private/meta";
+    if (!is_dir($meta_dir)) {
+        mkdir($meta_dir, 0755, true);
     }
 
     file_put_contents(
-        __DIR__ . "/.private/meta/dbdata.php",
+        "$meta_dir/dbdata.php",
         "<?php
 
 class DBData
 {
-    protected static \$db = $db;
-    protected static \$user = $dbuser;
-    protected static \$domain = $dbdomain;
-    protected static \$password = $dbpass;
+    protected static \$db = $db_name;
+    protected static \$user = $db_user;
+    protected static \$domain = $db_domain;
+    protected static \$password = $db_pass;
 }
 "
     );
 
-    require(__DIR__ . "/.private/scripts/db.php");
+    require_once __DIR__ . "/.private/scripts/db.php";
     $db = DB::get();
 
     $db->exec("
@@ -99,25 +103,37 @@ CREATE TABLE IF NOT EXISTS `tokens` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
     ");
 
-    file_put_contents(__DIR__ . "/.private/meta/priv.key", $_POST["privatekey"]);
-
-    $private_resource = openssl_get_privatekey($_POST["privatekey"], "");
-    $public_key = openssl_pkey_get_details($private_resource)['key'];
-
-    file_put_contents(__DIR__ . "/.private/meta/pub.key", $public_key);
-    file_put_contents(__DIR__ . "/.private/meta/key-id", $_POST["keyid"]);
-
-    if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off') {
-        $protocol = 'http://';
-    } else {
-        $protocol = 'https://';
+    $private_key = openssl_pkey_get_private($_POST["privatekey"], "");
+    if ($private_key === false) {
+        http_response_code(400);
+        header("Content-Type: text/html; charset=UTF-8");
+        die("<pre>Invalid private key provided. Could not parse EC private key with OpenSSL.</pre>");
     }
-    $base_url = $protocol . $_SERVER['SERVER_NAME'] . substr(dirname($_SERVER['PHP_SELF']), 0, -1);
+
+    $key_details = openssl_pkey_get_details($private_key);
+    if ($key_details === false || !isset($key_details["key"])) {
+        http_response_code(400);
+        header("Content-Type: text/html; charset=UTF-8");
+        die("<pre>Failed to extract public key from the provided private key.</pre>");
+    }
+    $public_key = $key_details["key"];
+
+    file_put_contents("$meta_dir/priv.key", $_POST["privatekey"]);
+    file_put_contents("$meta_dir/pub.key", $public_key);
+    file_put_contents("$meta_dir/key-id", $_POST["keyid"]);
+
+    $is_https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $protocol = $is_https ? 'https://' : 'http://';
+    $server_name = $_SERVER['SERVER_NAME'] ?? 'localhost';
+    $script_dir = rtrim(dirname($_SERVER['PHP_SELF'] ?? ''), '/\\');
+    $base_url = $protocol . $server_name . $script_dir;
 
     $path = $base_url;
-    $api_domain = (empty($_POST["apidomain"]) ? "https://api.monobank.ua" : $_POST["apidomain"]);
-    $header_bl = array_filter(explode("|", $_POST["headerbl"]));
-    if (count($header_bl) === 0) $header_bl = ["SSL", "GeoIp-Country-Code", "Host"];
+    $api_domain = $_POST["apidomain"] !== "" ? $_POST["apidomain"] : "https://api.monobank.ua";
+    $header_bl = array_values(array_filter(explode("|", $_POST["headerbl"])));
+    if ($header_bl === []) {
+        $header_bl = ["SSL", "GeoIp-Country-Code", "Host"];
+    }
 
     $install_log = [];
     $composer_install_output = [];
@@ -125,39 +141,73 @@ CREATE TABLE IF NOT EXISTS `tokens` (
     $public_push_cert = false;
     $private_push_cert = false;
     $pushproof = false;
+    $push_works = false;
 
-    if (!($_POST["nopushserver"] === "1")) {
-        if ($_POST["composerdeps"] === "1") {
-            $DIR = __DIR__;
-            $php_executable = (empty($_POST["phpexecutable"]) ? "php" : $_POST["phpexecutable"]);
+    $no_push_server = ($_POST["nopushserver"] ?? null) === "1";
+    $composer_deps = ($_POST["composerdeps"] ?? null) === "1";
+    $dl_composer = ($_POST["dlcomposer"] ?? null) === "1";
+    $set_webhook = ($_POST["webhook"] ?? null) === "1";
 
-            if ($_POST["dlcomposer"] === "1") {
-                file_put_contents("../composer-setup.php", file_get_contents("https://getcomposer.org/installer"));
-                exec("export HOME=$DIR/.. && cd .. && $php_executable composer-setup.php 2>&1", $composer_install_output);
+    if (!$no_push_server) {
+        if ($composer_deps) {
+            $project_root = dirname(__DIR__);
+            $php_executable = trim((string) ($_POST["phpexecutable"] ?? ""));
+            if ($php_executable === "") {
+                $php_executable = "php";
             }
 
-            exec("export HOME=$DIR/.. && cd .. && $php_executable composer.phar install 2>&1", $composer_require_output);
+            $escaped_root = escapeshellarg($project_root);
+            $escaped_php = escapeshellarg($php_executable);
+
+            if ($dl_composer) {
+                $installer = file_get_contents("https://getcomposer.org/installer");
+                if ($installer === false) {
+                    $composer_install_output[] = "Failed to download Composer installer from https://getcomposer.org/installer";
+                } else {
+                    $composer_setup = "$project_root/composer-setup.php";
+                    file_put_contents($composer_setup, $installer);
+                    exec("export HOME=$escaped_root && cd $escaped_root && $escaped_php composer-setup.php 2>&1", $composer_install_output);
+                    if (is_file($composer_setup)) {
+                        unlink($composer_setup);
+                    }
+                }
+            }
+
+            $composer_cmd = is_file("$project_root/composer.phar")
+                ? "$escaped_php composer.phar install 2>&1"
+                : "composer install 2>&1";
+            exec("export HOME=$escaped_root && cd $escaped_root && $composer_cmd", $composer_require_output);
 
             $install_log = array_merge($install_log, $composer_install_output, $composer_require_output);
         }
 
         try {
-            require __DIR__ . '/../vendor/autoload.php';
-            if (!class_exists("Minishlink\WebPush\WebPush")) throw new Exception("No WebPush library");
+            $autoload_path = __DIR__ . '/../vendor/autoload.php';
+            if (!is_file($autoload_path)) {
+                throw new RuntimeException("Vendor autoload file not found");
+            }
+            require_once $autoload_path;
+            if (!class_exists(Minishlink\WebPush\WebPush::class)) {
+                throw new RuntimeException("No WebPush library");
+            }
             $push_works = true;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            header("Content-Type: text/html; charset=UTF-8");
             echo "<pre>";
-            echo ("Web Push libraries are not installed. \nDisable Push Server at setup page if you are not going to support this feature.\n\n");
+            echo "Web Push libraries are not installed.\nDisable Push Server at setup page if you are not going to support this feature.\n\n";
             foreach ($install_log as $value) {
-                print($value . "\n");
+                echo htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "\n";
             }
             die("</pre>");
         }
 
-        $pushproof = (empty($_POST["webhooksecret"]) ? bin2hex(random_bytes(10)) : $_POST["webhooksecret"]);
+        $webhook_secret = (string) ($_POST["webhooksecret"] ?? "");
+        $pushproof = $webhook_secret === "" ? bin2hex(random_bytes(10)) : $webhook_secret;
 
-        $public_push_cert = (empty($_POST["publicpushcert"]) ? false : $_POST["publicpushcert"]);
-        $private_push_cert = (empty($_POST["privatepushcert"]) ? false : $_POST["privatepushcert"]);
+        $public_push_input = (string) ($_POST["publicpushcert"] ?? "");
+        $private_push_input = (string) ($_POST["privatepushcert"] ?? "");
+        $public_push_cert = $public_push_input === "" ? false : $public_push_input;
+        $private_push_cert = $private_push_input === "" ? false : $private_push_input;
 
         if (!$public_push_cert && !$private_push_cert) {
             $key_gen = Minishlink\WebPush\VAPID::createVapidKeys();
@@ -179,21 +229,22 @@ CREATE TABLE IF NOT EXISTS `tokens` (
     ];
 
     file_put_contents(
-        __DIR__ . "/.private/meta/settings.json",
+        "$meta_dir/settings.json",
         json($settings)
     );
 
+    if (!$no_push_server && $set_webhook && $push_works) {
+        require_once __DIR__ . "/.private/scripts/settings.php";
+        require_once __DIR__ . "/.private/scripts/mono-sender.php";
 
-    if (!($_POST["nopushserver"] === "1") && $_POST["webhook"] === "1" && $push_works) {
-        require_once __DIR__ . "/.private/scripts/index.php";
-
+        $api_log = [];
         $auth = mono_sender(
             "/personal/corp/webhook",
             "POST",
             null,
             json(
                 [
-                    "webHookUrl" => (isset($_SERVER['HTTPS']) ? "https" : "http") . "://{$_SERVER['SERVER_NAME']}/push/" . Settings::$get->push->proof . "/accept",
+                    "webHookUrl" => $base_url . "/push/" . Settings::$get->push->proof . "/accept",
                 ]
             ),
             [],
@@ -202,11 +253,12 @@ CREATE TABLE IF NOT EXISTS `tokens` (
         );
         $install_log = array_merge($install_log, $api_log);
 
+        $api_log = [];
         mono_sender(
             "/personal/corp/settings",
             "GET",
             null,
-            json([]),
+            "{}",
             [],
             "",
             $api_log
@@ -215,8 +267,8 @@ CREATE TABLE IF NOT EXISTS `tokens` (
     }
 
     DeleteOnExit::$done = true;
-    header("Content-Type: text/html");
-    echo ('
+    header("Content-Type: text/html; charset=UTF-8");
+    echo '
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -228,13 +280,13 @@ CREATE TABLE IF NOT EXISTS `tokens` (
 <body>
     <h1 style="margin-bottom: 0">Success</h1>
     <p style="margin-top: 0">Installation script saved the configuration <b>and self-destructed</b></p>
-    <details><summary><b>Logs</b></summary><pre>');
+    <details><summary><b>Logs</b></summary><pre>';
     foreach ($install_log as $value) {
-        echo $value . "\n";
+        echo htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "\n";
     }
-    echo ('</pre></details></body>
-</html>    
-');
+    echo '</pre></details></body>
+</html>
+';
     exit();
 }
 
@@ -266,7 +318,7 @@ CREATE TABLE IF NOT EXISTS `tokens` (
 <body>
     <h1>Mono Corporate API Proxy Setup</h1>
     <hr>
-    <form action="?" , method="POST">
+    <form action="?" method="POST">
         <fieldset>
             <legend>Database</legend>
 
@@ -297,7 +349,7 @@ CREATE TABLE IF NOT EXISTS `tokens` (
                 Private key:
             </label>
             <textarea name="privatekey" id="privatekey" rows="10" cols="70" placeholder="-----BEGIN EC PARAMETERS-----"></textarea><br>
-            <label for="privatekey">
+            <label for="keyid">
                 Key ID:
             </label>
             <input type="text" name="keyid" id="keyid" size="70" placeholder="~40 characters long hexadecimal number">
@@ -320,6 +372,7 @@ CREATE TABLE IF NOT EXISTS `tokens` (
                     <input type="checkbox" name="nopushserver" id="nopushserver" value="1">
                     Disable Push Server and skip this block
                 </label>
+            </p>
             <details>
                 <summary><b>Composer will be used to install Web Push libraries. Click to change that.</b></summary>
                 <label for="composerdeps" class="has-checkbox">
@@ -344,7 +397,7 @@ CREATE TABLE IF NOT EXISTS `tokens` (
 </pre>
                 <p>to initiate the project from composer.lock, or install packages manually:</p>
                 <pre>
-    $ composer require minishlink/web-push 7.0.0
+    $ composer require minishlink/web-push:^11.0 guzzlehttp/guzzle:^7.9
 </pre>
                 <p>
                     If you can't use Composer,
@@ -353,7 +406,6 @@ CREATE TABLE IF NOT EXISTS `tokens` (
                     and unpack it to the parent directory of <b>public</b>, so <b>public</b> and <b>vendor</b> folders will be near.
                 </p>
             </details>
-            </p>
             Your Push API keys will be generated automatically
             <details>
                 <summary><b>Use my own</b></summary>
@@ -369,7 +421,7 @@ CREATE TABLE IF NOT EXISTS `tokens` (
                     Public Push Key:
                 </label>
                 <input type="text" name="publicpushcert" id="publicpushcert" placeholder="~87 characters" size="90"><br>
-                <label for="publicpushcert">
+                <label for="privatepushcert">
                     Private Push Key:
                 </label>
                 <input type="text" name="privatepushcert" id="privatepushcert" placeholder="~43 characters" size="45"><br>
@@ -383,7 +435,7 @@ CREATE TABLE IF NOT EXISTS `tokens` (
             </p>
         </fieldset>
         <fieldset>
-            <legend>Write & Set Up</legend>
+            <legend>Write &amp; Set Up</legend>
             <input type="submit">
         </fieldset>
     </form>

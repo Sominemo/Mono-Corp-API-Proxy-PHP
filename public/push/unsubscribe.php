@@ -4,7 +4,7 @@ require __DIR__ . "/../.private/scripts/index.php";
 
 Token::$is = checkToken(true);
 
-$channels = json_decode($_POST["channels"], true);
+$channels = json_decode($_POST["channels"] ?? "", true);
 
 if (!is_array($channels)) exit(json(["error" => "Invalid channels list"]));
 if (!isset($_POST["endpoint"]) || strlen($_POST["endpoint"]) === 0) exit(json(["error" => "Invalid endpoint"]));
@@ -13,8 +13,9 @@ $endpoint = $_POST["endpoint"];
 
 foreach ($channels as $channel) {
     if (
-        gettype($channel["type"]) !== "string"
-        || gettype($channel["id"]) !== "string"
+        !is_array($channel)
+        || gettype($channel["type"] ?? null) !== "string"
+        || gettype($channel["id"] ?? null) !== "string"
         || strlen($channel["type"]) === 0
         || strlen($channel["id"]) === 0
     ) {
@@ -29,7 +30,7 @@ foreach ($channels as $channel) {
     $req = $db->prepare("SELECT * from `subscriptions` WHERE `token` = ? AND `type` = ? AND `identificator` = ? AND `endpoint` = ?");
     $req->execute([Token::$is, $channel["type"], $channel["id"], $endpoint]);
     $res = $req->fetch();
-    if ($res["id"] > 0) $ids[] = $res["id"];
+    if ($res && $res["id"] > 0) $ids[] = $res["id"];
 }
 
 if (count($ids) === 0) die(json(["result" => true]));

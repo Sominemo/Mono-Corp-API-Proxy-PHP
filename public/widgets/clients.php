@@ -5,7 +5,7 @@ $db = DB::get();
 $s = $db->prepare("SELECT * from `clients_count` WHERE `time` > ? ORDER BY `time` DESC LIMIT 1");
 $s->execute([time() - 5 * 60]);
 $c = $s->fetch();
-if (!($c["id"] > 0)) {
+if (!$c || !($c["id"] > 0)) {
     $cnt = json_decode(file_get_contents("https://www.monobank.ua/api/dashboard/stat/clcnt"))->result->clientCnt;
     if ($cnt) {
         $s = $db->prepare("INSERT into `clients_count` SET `time` = ?, `value` = ?");

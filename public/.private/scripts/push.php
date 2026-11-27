@@ -36,11 +36,12 @@ class Push
 
         self::$API->queueNotification($subscription, $payload, $options);
 
+        $success = false;
         try {
             foreach (self::$API->flush() as $report) {
                 $success = !!$report->isSuccess();
             }
-        } catch (Error $e) {
+        } catch (Throwable $e) {
             $success = false;
         }
 

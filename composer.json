@@ -1,5 +1,15 @@
 {
     "require": {
-        "minishlink/web-push": "7.0.0"
+        "php": "^8.4",
+        "minishlink/web-push": "^11.0",
+        "guzzlehttp/guzzle": "^7.9"
+    },
+    "config": {
+        "platform": {
+            "php": "8.4.0"
+        },
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
     }
 }

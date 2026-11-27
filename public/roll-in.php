@@ -1,4 +1,5 @@
 <?php
+
 ob_end_clean();
 header("Connection: close");
 ignore_user_abort(true);

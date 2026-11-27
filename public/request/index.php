@@ -4,7 +4,7 @@ require __DIR__."/../.private/scripts/index.php";
 $header_ignore = Settings::$get->headers_blacklist;
 $get_ignore = ["__method__"];
 $mono_api_domain = Settings::$get->api_domain;
-$method = "/".$_GET["__method__"];
+$method = "/".($_GET["__method__"] ?? "");
 
 $headers = getallheaders();
 $get = $_GET;
@@ -17,7 +17,7 @@ foreach ($get_ignore as $value) {
     if (isset($get[$value])) unset($get[$value]);
 }
 
-$headers["x-request-id"] = $headers["x-request-id"] ?: $headers["X-Request-Id"];
+$headers["x-request-id"] = $headers["x-request-id"] ?? $headers["X-Request-Id"] ?? null;
 
 if (isset($headers["x-request-id"])) {
     $db = DB::get();
@@ -25,7 +25,7 @@ if (isset($headers["x-request-id"])) {
     $st->execute([$headers["x-request-id"]]);
     $r = $st->fetch();
 
-    if (!($r["id"] > 0)) exit(json(["error" => "Invalid Mono-associated token"]));
+    if (!$r || !($r["id"] > 0)) exit(json(["error" => "Invalid Mono-associated token"]));
     $timer = time();
 
     unset($headers["x-request-id"]);
@@ -65,7 +65,7 @@ function getHttpCode($http_response_header)
     return 0;
 }
 
-foreach ($http_response_header as $value) {
+foreach (http_get_last_response_headers() ?? [] as $value) {
     header("$value");
 }
 

@@ -2,7 +2,7 @@
 Example implementation of [Mono Corp API Proxy Protocol](https://gist.github.com/Sominemo/64845669d6326f2f73d356f025656bdb)
 
 ## Requirements
-- PHP 7.3+
+- PHP 8.4+
 - MySQL server
 - OpenSSL extension enabled
 
